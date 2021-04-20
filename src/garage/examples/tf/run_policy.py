@@ -4,6 +4,8 @@ import argparse
 
 from garage.envs import GymEnv
 from garage.trainer import TFTrainer
+from garage.experiment import Snapshotter
+import tensorflow as tf
 
 parser = argparse.ArgumentParser()
 parser.add_argument('file_path',
@@ -15,26 +17,22 @@ parser.add_argument('--n_steps',
                     help='Number of steps to run')
 args = parser.parse_args()
 
-# Construct the environment
-env = GymEnv('LunarLander-v2')
+snapshotter = Snapshotter()
+with tf.compat.v1.Session(): # optional, only for TensorFlow
+    data = snapshotter.load(args.file_path)
+policy = data['algo'].policy
 
-# Reset the environment and launch the viewer
-env.reset()
-env.visualize()
+# You can also access other components of the experiment
+env = data['env']
 
-step_count = 0
-es = env.step(env.action_space.sample())
+steps, max_steps = 0, 150
+done = False
+obs = env.reset()  # The initial observation
+policy.reset()
 
-class snp:
-    def __init__(self):
-        self.snapshot_dir = args.file_path
-        self.snapshot_mode = 'last'
-        self.snapshot_gap = 1
-
-with TFTrainer(snapshot_config=snp()) as trainer:
-    trainer.restore(args.file_path)
-    while not es.last and step_count < args.n_steps:
-        es = env.step(env.action_space.sample())
-        step_count += 1
+while steps < max_steps and not done:
+    obs, rew, done, _ = env.step(policy.get_action(obs))
+    env.render()  # Render the environment to see what's going on (optional)
+    steps += 1
 
 env.close()
