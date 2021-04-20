@@ -26,10 +26,12 @@ def plot_run(progress_file):
 episode_list = []
 reward_list = []
 
-for directory in os.listdir(sys.argv[1]):
-    if not 'erwr_cartpole' in directory:
+experiments_dir = sys.argv[1] + '/local/experiment/'
+
+for directory in os.listdir(experiments_dir):
+    if not sys.argv[2] in directory:
         continue
-    episodes, rewards = plot_run(sys.argv[1] + directory + '/progress.csv')
+    episodes, rewards = plot_run(experiments_dir + directory + '/progress.csv')
     episode_list.append(episodes)
     reward_list.append(rewards)
 
