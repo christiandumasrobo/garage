@@ -83,7 +83,7 @@ def her_ddpg_fetchreach(ctxt=None, seed=1):
 
         trainer.setup(algo=ddpg, env=env)
 
-        trainer.train(n_epochs=50, batch_size=256)
+        trainer.train(n_epochs=100, batch_size=256)
 
 
 her_ddpg_fetchreach()

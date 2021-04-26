@@ -10,13 +10,13 @@ from garage.np.exploration_policies import EpsilonGreedyPolicy
 from garage.replay_buffer import PathBuffer
 from garage.sampler import FragmentWorker, LocalSampler
 from garage.tf.algos import DQN
-from garage.tf.policies import DiscreteQFArgmaxPolicy
+from garage.tf.policies import DiscreteQFArgmaxPolicy, GaussianMLPPolicy
 from garage.tf.q_functions import DiscreteMLPQFunction
 from garage.trainer import TFTrainer
 
 
 @wrap_experiment
-def dqn_cartpole(ctxt=None, seed=1):
+def dqn_bipedal(ctxt=None, seed=1):
     """Train TRPO with CubeCrash-v0 environment.
 
     Args:
@@ -32,9 +32,11 @@ def dqn_cartpole(ctxt=None, seed=1):
         steps_per_epoch = 10
         sampler_batch_size = 500
         num_timesteps = n_epochs * steps_per_epoch * sampler_batch_size
-        env = GymEnv('CartPole-v0')
+        env = GymEnv('BipedalWalker-v3')
         replay_buffer = PathBuffer(capacity_in_transitions=int(1e4))
         qf = DiscreteMLPQFunction(env_spec=env.spec, hidden_sizes=(64, 64))
+        #policy = GaussianMLPPolicy(env_spec=env.spec, hidden_sizes=(256, 256, 256))
+
         policy = DiscreteQFArgmaxPolicy(env_spec=env.spec, qf=qf)
         exploration_policy = EpsilonGreedyPolicy(env_spec=env.spec,
                                                  policy=policy,
@@ -68,4 +70,4 @@ def dqn_cartpole(ctxt=None, seed=1):
         trainer.train(n_epochs=n_epochs, batch_size=sampler_batch_size)
 
 
-dqn_cartpole()
+dqn_bipedal()

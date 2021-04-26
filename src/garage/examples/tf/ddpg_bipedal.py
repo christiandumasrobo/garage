@@ -35,7 +35,7 @@ def ddpg_pendulum(ctxt=None, seed=1):
     """
     set_seed(seed)
     with TFTrainer(snapshot_config=ctxt) as trainer:
-        env = GymEnv('InvertedDoublePendulum-v2')
+        env = GymEnv('BipedalWalker-v3')
 
         policy = ContinuousMLPPolicy(env_spec=env.spec,
                                      hidden_sizes=[64, 64],
@@ -76,7 +76,7 @@ def ddpg_pendulum(ctxt=None, seed=1):
 
         trainer.setup(algo=ddpg, env=env)
 
-        trainer.train(n_epochs=500, batch_size=100)
+        trainer.train(n_epochs=100, batch_size=500)
 
 
 ddpg_pendulum(seed=1)

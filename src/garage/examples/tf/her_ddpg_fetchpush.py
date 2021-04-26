@@ -15,31 +15,10 @@ from garage.tf.algos import DDPG
 from garage.tf.policies import ContinuousMLPPolicy
 from garage.tf.q_functions import ContinuousMLPQFunction
 from garage.trainer import TFTrainer
-from garage.tf.algos import ERWR
-from garage.np.baselines import LinearFeatureBaseline
-from garage.tf.algos import TRPO
-import gym
-from gym.wrappers import FlattenObservation, FilterObservation
-from garage.envs.normalized_env import normalize
 
-################## START FLATTEN WRAPPER
-import gym.spaces as spaces
-from gym import ObservationWrapper
-
-
-class FlatEnv(GymEnv):
-    r"""Observation wrapper that flattens the observation."""
-    def __init__(self, env_name):
-        super(FlatEnv, self).__init__(env_name)
-        self.observation_space = spaces.flatten_space(self.observation_space)
-
-    def observation(self, observation):
-        return spaces.flatten(self.observation_space, observation)
-
-################## END FLATTEN WRAPPER
 
 @wrap_experiment(snapshot_mode='last')
-def erwr_fetchreach(ctxt=None, seed=1):
+def her_ddpg_fetchreach(ctxt=None, seed=1):
     """Train DDPG + HER on the goal-conditioned FetchReach env.
 
     Args:
@@ -51,21 +30,11 @@ def erwr_fetchreach(ctxt=None, seed=1):
     """
     set_seed(seed)
     with TFTrainer(snapshot_config=ctxt) as trainer:
-        env = FlatEnv('FetchReach-v1')
-        #env2 = GymEnv('CartPole-v0')
-        #env = FilterObservation(env, ['observation', 'desired_goal'])
-
-        env_tmp = FlattenObservation(env)
-
-        #env = normalize(env)
-        #env.observation_space = env_tmp.observation_space
-        import pdb; pdb.set_trace()
-        #env = FlattenObservation(FilterObservation(env, ['observation', 'desired_goal']))
+        env = GymEnv('FetchPush-v1')
 
         policy = ContinuousMLPPolicy(
             env_spec=env.spec,
             name='Policy',
-            #hidden_sizes=[256, 256, 256],
             hidden_sizes=[256, 256, 256],
             hidden_nonlinearity=tf.nn.relu,
             output_nonlinearity=tf.nn.tanh,
@@ -94,18 +63,6 @@ def erwr_fetchreach(ctxt=None, seed=1):
                                is_tf_worker=True,
                                worker_class=FragmentWorker)
 
-        baseline = LinearFeatureBaseline(env_spec=env.spec)
-
-        '''
-        algo = TRPO(env_spec=env.spec,
-                    policy=policy,
-                    baseline=baseline,
-                    sampler=sampler,
-                    discount=0.99,
-                    max_kl_step=0.01)
-                    '''
-
-        '''
         ddpg = DDPG(
             env_spec=env.spec,
             policy=policy,
@@ -123,17 +80,10 @@ def erwr_fetchreach(ctxt=None, seed=1):
             qf_optimizer=tf.compat.v1.train.AdamOptimizer,
             buffer_batch_size=256,
         )
-        '''
 
-        algo = ERWR(env_spec=env.spec,
-                    policy=policy,
-                    baseline=baseline,
-                    sampler=sampler,
-                    discount=0.99)
-
-        trainer.setup(algo=algo, env=env)
+        trainer.setup(algo=ddpg, env=env)
 
         trainer.train(n_epochs=100, batch_size=256)
 
 
-erwr_fetchreach()
+her_ddpg_fetchreach()

@@ -16,7 +16,8 @@ def plot_run(progress_file):
             num_episodes = float(episode_count)
             total_episodes += num_episodes
             episodes.append(total_episodes)
-        for av_reward in csv_data['Evaluation/AverageReturn']:
+        #for av_reward in csv_data['Evaluation/AverageReturn']:
+        for av_reward in csv_data['Evaluation/MaxReturn']:
             reward = float(av_reward)
             total_reward += reward
             rewards.append(reward)
