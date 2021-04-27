@@ -3,6 +3,9 @@ import sys
 import matplotlib.pyplot as plt
 from pandas import read_csv
 import os
+from sklearn.gaussian_process import GaussianProcessRegressor
+from sklearn.gaussian_process.kernels import RBF, ConstantKernel as C
+import numpy as np
 
 def plot_run(progress_file):
     total_episodes = 0
@@ -36,8 +39,30 @@ for directory in os.listdir(experiments_dir):
     episode_list.append(episodes)
     reward_list.append(rewards)
 
-for i in range(len(episode_list)):
-    plt.plot(episode_list[i], reward_list[i])
+el = np.array(episode_list)
+rl = np.array(reward_list)
+
+kernel = C(1.0, (1e-3, 1e3)) * RBF(10, (1e-2, 1e2))
+gp = GaussianProcessRegressor(kernel=kernel, n_restarts_optimizer=10)
+gp.fit(el, rl)
+rl_pred, sigma = gp.predict(el, return_std=True)
+#import pdb; pdb.set_trace()
+
+plt.figure()
+el = el.mean(axis=0)
+rlm = rl.mean(axis=0)
+rls = rl.std(axis=0)
+plt.plot(el, rlm)
+plt.title(sys.argv[2] + ' average sample efficiency')
 plt.xlabel('Total episodes learning')
 plt.ylabel('Reward per episode')
+
+std_factor = 1.0
+
+plt.fill(np.concatenate([el, el[::-1]]),
+         np.concatenate([rlm - std_factor * rls,
+                        (rlm + std_factor * rls)[::-1]]),
+         alpha=.5, fc='b', ec='None', label='95% confidence interval')
+
 plt.show()
+exit()
