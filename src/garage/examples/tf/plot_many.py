@@ -46,11 +46,76 @@ for experiment in os.listdir(sys.argv[1]):
     re_avs.append(np.array(reward_list).mean(axis=0))
     ex_names.append(experiment)
 
+maxl = 0
+for av in re_avs:
+    maxl = max(maxl, len(av))
+orig_lens = []
+for i in range(len(re_avs)):
+    orig_lens.append(len(ep_avs[i]))
+    ep_avs[i] = np.resize(ep_avs[i], maxl)
+    re_avs[i] = np.resize(re_avs[i], maxl)
+#import pdb; pdb.set_trace()
+# Construct thresholds
+xmin = 115
+xmax = 10000
+line_seg_x = np.array([xmin, xmax])
+thresholds = []
+minr = np.min(re_avs)
+maxr = np.max(re_avs)
+def ratiofy(mnr, mxr, rat):
+    return (mxr - mnr) * rat + mnr
+fracs = []
+frac_names = []
+for frac in np.arange(0.2, 1.0, 0.2):
+    fracs.append(frac)
+    frac_names.append(str(round(frac, 1)))
+    thresholds.append(ratiofy(minr, maxr, frac))
+
+# Plot thresholds
+for threshold in thresholds:
+    plt.plot(line_seg_x, np.array(2 * [threshold]), 'k')
+
+first_crosses = []
 for i in range(len(ep_avs)):
-    plt.plot(ep_avs[i], re_avs[i], label=ex_names[i])
+    # Get the crossing points of the performance thresholds in # of episodes
+    first_crosses.append([])
+    for j in range(len(thresholds)):
+        threshold = thresholds[j]
+        thresh_frac = fracs[j]
+        for ep in range(len(ep_avs[i])):
+            if re_avs[i][ep] > threshold and ep_avs[i][ep] > xmin:
+                first_crosses[i].append(re_avs[i][ep] / np.log(ep_avs[i][ep]))
+                #first_crosses[i].append(1 / np.log(ep_avs[i][ep]))
+                print(ex_names[i], thresh_frac, threshold, ep_avs[i][ep])
+                break
+
+    # Plot reward segments
+    plt.plot(ep_avs[i][:orig_lens[i]], re_avs[i][:orig_lens[i]], label=ex_names[i])
+
+# Formatting
 plt.legend()
-plt.title('Sample Efficiency of the ' + sys.argv[2] + ' task')
-plt.xlabel('Total episodes learning')
+#plt.title(sys.argv[2] + ' task performance')
+plt.xlabel('Cumulative Samples (episodes)')
 plt.ylabel('Reward per episode')
+plt.xlim([xmin, xmax])
 plt.xscale('log')
+#plt.show()
+
+fig, ax = plt.subplots()
+max_crosses = -1
+for cross in first_crosses:
+    max_crosses = max(len(cross), max_crosses)
+print(max_crosses)
+xvals = np.array(list(range(max_crosses)))
+width = 0.1
+for i, cross in enumerate(first_crosses):
+    if len(cross) > 0:
+        ax.bar(xvals[:len(cross)] + i * width, cross, width, label=ex_names[i])
+ax.set_xticks(xvals)
+ax.set_xticklabels(frac_names)
+#import pdb; pdb.set_trace()
+ax.legend()
+ax.set_xlabel('Performance Percentage')
+ax.set_ylabel('Reward Scaled Inverse Log Sample Count')
+#ax.set_title(sys.argv[2] + ' task sample efficiency')
 plt.show()
