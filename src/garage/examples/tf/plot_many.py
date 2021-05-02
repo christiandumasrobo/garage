@@ -76,15 +76,18 @@ for threshold in thresholds:
     plt.plot(line_seg_x, np.array(2 * [threshold]), 'k')
 
 first_crosses = []
+first_crosses_unt = []
 for i in range(len(ep_avs)):
     # Get the crossing points of the performance thresholds in # of episodes
     first_crosses.append([])
+    first_crosses_unt.append([])
     for j in range(len(thresholds)):
         threshold = thresholds[j]
         thresh_frac = fracs[j]
         for ep in range(len(ep_avs[i])):
             if re_avs[i][ep] > threshold and ep_avs[i][ep] > xmin:
                 first_crosses[i].append(re_avs[i][ep] / np.log(ep_avs[i][ep]))
+                first_crosses_unt[i].append(ep_avs[i][ep])
                 #first_crosses[i].append(1 / np.log(ep_avs[i][ep]))
                 print(ex_names[i], thresh_frac, threshold, ep_avs[i][ep])
                 break
@@ -105,12 +108,13 @@ fig, ax = plt.subplots()
 max_crosses = -1
 for cross in first_crosses:
     max_crosses = max(len(cross), max_crosses)
-print(max_crosses)
+#print(max_crosses)
 xvals = np.array(list(range(max_crosses)))
 width = 0.1
 for i, cross in enumerate(first_crosses):
     if len(cross) > 0:
         ax.bar(xvals[:len(cross)] + i * width, cross, width, label=ex_names[i])
+    print(ex_names[i], cross)
 ax.set_xticks(xvals)
 ax.set_xticklabels(frac_names)
 #import pdb; pdb.set_trace()
@@ -118,4 +122,15 @@ ax.legend()
 ax.set_xlabel('Performance Percentage')
 ax.set_ylabel('Reward Scaled Inverse Log Sample Count')
 #ax.set_title(sys.argv[2] + ' task sample efficiency')
-plt.show()
+#plt.show()
+
+
+# Print a table of the crossover points
+for i in range(max_crosses):
+    print(frac_names[i], '&', end=' ')
+print('\\\\\n\\hline')
+for i, cross in enumerate(first_crosses_unt):
+    print(ex_names[i], '&', end=' ')
+    for cr_i, cr in enumerate(cross):
+        print(int(cr), '&', end=' ')
+    print('\\\\\n\\hline')
